@@ -7,25 +7,30 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String)
-    _password_hash = db.Column(db.String)
+    username = db.Column(db.String, unique=True, nullable=False)
+    _password_hash = db.Column(db.String, nullable=False)
 
-    # Build method to protect password_hash property
+    # Protect direct access to password_hash
     @hybrid_property
     def password_hash(self):
-        pass
+        raise AttributeError("Password hashes may not be viewed.")
 
-    # Build method to set password hash property using bcrypt.generate_password_hash()
+    # Set password hash using bcrypt
     @password_hash.setter
     def password_hash(self, password):
-        pass
+        self._password_hash = bcrypt.generate_password_hash(
+            password.encode('utf-8')
+        ).decode('utf-8')
 
-    # Build authenticate method that uses bcrypt.check_password_hash()
+    # Authenticate a user by comparing hash to entered password
     def authenticate(self, password):
-        pass
+        return bcrypt.check_password_hash(
+            self._password_hash.encode('utf-8'),
+            password.encode('utf-8')
+        )
 
     def __repr__(self):
-        return f'User {self.username}, ID: {self.id}'
+        return f'<User {self.username}, ID: {self.id}>'
 
 class UserSchema(Schema):
     id = fields.Int()
